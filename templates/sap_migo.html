@@ -1,0 +1,237 @@
+{% extends "sap_base.html" %}
+
+{% block title %}MIGO - Goods Movement{% endblock %}
+
+{% block content %}
+<div class="sap-transaction-header">
+    <div>
+        <span class="sap-transaction-title">MIGO — Goods Movement</span>
+        <span class="sap-transaction-code">Material Document Posting</span>
+    </div>
+    <div>
+        <span style="font-size:11px;">Plant: <strong>{{ current_plant }}</strong> / SLoc: <strong>{{ current_sloc }}</strong></span>
+    </div>
+</div>
+
+{% if message %}
+<div class="sap-message sap-message-{{ message_type }}">
+    {{ message }}
+    {% if doc_number %}
+    <br><a href="/tcode/mb51/doc/{{ doc_number }}" class="sap-btn-text">Display Document {{ doc_number }}</a>
+    {% endif %}
+</div>
+{% endif %}
+
+<form method="POST" action="/tcode/migo/post" class="sap-form" id="migoForm">
+    <div class="sap-form-section">
+        <div class="sap-form-section-title">Movement Data</div>
+        
+        <div class="sap-form-row">
+            <label class="sap-form-label required">Movement Type</label>
+            <select name="movement_type" class="sap-form-select" required id="movementType">
+                <option value="">Select...</option>
+                {% for mvt in movement_types %}
+                <option value="{{ mvt.code }}" {% if form_data and form_data.movement_type == mvt.code %}selected{% endif %}>
+                    {{ mvt.code }} - {{ mvt.name }}
+                </option>
+                {% endfor %}
+            </select>
+            
+            <label class="sap-form-label">Doc. Date</label>
+            <input type="date" name="doc_date" class="sap-form-input" value="{{ form_data.doc_date if form_data else today }}">
+        </div>
+        
+        <div class="sap-form-row">
+            <label class="sap-form-label required">Material</label>
+            <input type="text" name="material_sku" class="sap-form-input" required 
+                   value="{{ form_data.material_sku if form_data else '' }}"
+                   placeholder="Material Number">
+            
+            <label class="sap-form-label">Posting Date</label>
+            <input type="date" name="posting_date" class="sap-form-input" value="{{ form_data.posting_date if form_data else today }}">
+        </div>
+        
+        <div class="sap-form-row">
+            <label class="sap-form-label required">Plant</label>
+            <input type="text" name="plant_code" class="sap-form-input" required 
+                   value="{{ form_data.plant_code if form_data else current_plant }}">
+            
+            <label class="sap-form-label required">Quantity</label>
+            <input type="number" step="0.001" name="quantity" class="sap-form-input" required 
+                   value="{{ form_data.quantity if form_data else '' }}"
+                   placeholder="0.000">
+        </div>
+        
+        <div class="sap-form-row">
+            <label class="sap-form-label" id="slocFromLabel">SLoc (From)</label>
+            <input type="text" name="sloc_from_code" class="sap-form-input" id="slocFrom"
+                   value="{{ form_data.sloc_from_code if form_data else '' }}">
+            
+            <label class="sap-form-label">Unit</label>
+            <input type="text" name="uom" class="sap-form-input" value="{{ form_data.uom if form_data else 'EA' }}">
+        </div>
+        
+        <div class="sap-form-row">
+            <label class="sap-form-label" id="slocToLabel">SLoc (To)</label>
+            <input type="text" name="sloc_to_code" class="sap-form-input" id="slocTo"
+                   value="{{ form_data.sloc_to_code if form_data else current_sloc }}">
+            
+            <label class="sap-form-label">Batch</label>
+            <input type="text" name="batch_number" class="sap-form-input" 
+                   value="{{ form_data.batch_number if form_data else '' }}"
+                   placeholder="Optional">
+        </div>
+    </div>
+    
+    <div class="sap-form-section">
+        <div class="sap-form-section-title">Additional Data</div>
+        
+        <div class="sap-form-row single">
+            <label class="sap-form-label">Reference</label>
+            <input type="text" name="reference_text" class="sap-form-input" 
+                   value="{{ form_data.reference_text if form_data else '' }}"
+                   placeholder="PO Number, Order, etc.">
+        </div>
+        
+        <div class="sap-form-row single">
+            <label class="sap-form-label">Header Text</label>
+            <input type="text" name="header_text" class="sap-form-input" 
+                   value="{{ form_data.header_text if form_data else '' }}"
+                   placeholder="Document description">
+        </div>
+        
+        <div class="sap-form-row single">
+            <label class="sap-form-label">Item Text</label>
+            <textarea name="item_text" class="sap-form-textarea">{{ form_data.item_text if form_data else '' }}</textarea>
+        </div>
+    </div>
+    
+    {% if validation_errors %}
+    <div class="sap-message sap-message-error">
+        <strong>Validation Errors:</strong>
+        <ul style="margin:10px 0 0 20px;">
+            {% for error in validation_errors %}
+            <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+    
+    {% if validation_warnings %}
+    <div class="sap-message sap-message-warning">
+        <strong>Warnings:</strong>
+        <ul style="margin:10px 0 0 20px;">
+            {% for warning in validation_warnings %}
+            <li>{{ warning }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+    
+    <div class="sap-button-bar">
+        <button type="button" class="sap-btn" data-action="check" onclick="checkDocument()">
+            ✓ Check
+        </button>
+        <button type="submit" class="sap-btn-success" id="postButton" {% if not validated %}disabled{% endif %}>
+            💾 Post
+        </button>
+        <button type="button" class="sap-btn" onclick="clearForm()">
+            ↺ Clear
+        </button>
+        <button type="button" class="sap-btn" onclick="window.location.href='/tcode/mb51'">
+            📋 Document List
+        </button>
+    </div>
+</form>
+
+<script>
+// Dynamic field requirements based on movement type
+const movementType = document.getElementById('movementType');
+const slocFrom = document.getElementById('slocFrom');
+const slocTo = document.getElementById('slocTo');
+const slocFromLabel = document.getElementById('slocFromLabel');
+const slocToLabel = document.getElementById('slocToLabel');
+
+movementType.addEventListener('change', () => {
+    const mvt = movementType.value;
+    
+    // Reset
+    slocFrom.required = false;
+    slocTo.required = false;
+    slocFromLabel.classList.remove('required');
+    slocToLabel.classList.remove('required');
+    
+    if (mvt === '101') {  // GR
+        slocTo.required = true;
+        slocToLabel.classList.add('required');
+        slocFromLabel.textContent = 'SLoc (From)';
+        slocToLabel.textContent = 'SLoc (To)';
+    } else if (mvt === '102') {  // GR Reversal
+        slocFrom.required = true;
+        slocFromLabel.classList.add('required');
+        slocFromLabel.textContent = 'SLoc (From)';
+        slocToLabel.textContent = 'SLoc (To)';
+    } else if (mvt === '261') {  // GI
+        slocFrom.required = true;
+        slocFromLabel.classList.add('required');
+        slocFromLabel.textContent = 'SLoc (From)';
+        slocToLabel.textContent = 'SLoc (To)';
+    } else if (mvt === '262') {  // GI Reversal
+        slocTo.required = true;
+        slocToLabel.classList.add('required');
+        slocFromLabel.textContent = 'SLoc (From)';
+        slocToLabel.textContent = 'SLoc (To)';
+    } else if (mvt === '311') {  // Transfer
+        slocFrom.required = true;
+        slocTo.required = true;
+        slocFromLabel.classList.add('required');
+        slocToLabel.classList.add('required');
+        slocFromLabel.textContent = 'SLoc (From)';
+        slocToLabel.textContent = 'SLoc (To)';
+    } else if (mvt === '551') {  // Scrap
+        slocFrom.required = true;
+        slocFromLabel.classList.add('required');
+        slocFromLabel.textContent = 'SLoc (From)';
+        slocToLabel.textContent = 'SLoc (To)';
+    }
+});
+
+// Trigger on load
+if (movementType.value) {
+    movementType.dispatchEvent(new Event('change'));
+}
+
+function checkDocument() {
+    const form = document.getElementById('migoForm');
+    const formData = new FormData(form);
+    
+    fetch('/tcode/migo/check', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.ok) {
+            showStatusMessage('✓ Document is valid. Ready to post.', 'success');
+            document.getElementById('postButton').disabled = false;
+            
+            if (data.warnings && data.warnings.length > 0) {
+                showStatusMessage('⚠ Warnings: ' + data.warnings.join('; '), 'warning');
+            }
+        } else {
+            showStatusMessage('✗ Validation failed: ' + data.errors.join('; '), 'error');
+            document.getElementById('postButton').disabled = true;
+        }
+    })
+    .catch(error => {
+        showStatusMessage('Error checking document: ' + error, 'error');
+    });
+}
+
+function clearForm() {
+    document.getElementById('migoForm').reset();
+    document.getElementById('postButton').disabled = true;
+    showStatusMessage('Form cleared', 'info');
+}
+</script>
+{% endblock %}

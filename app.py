@@ -1,5 +1,5 @@
 """
-Stock Management System - Main Application with Authentication
+Stock Management System - Main Application with Authentication and SAP UI
 """
 from flask import Flask, jsonify, request, render_template, redirect, url_for, session
 from flask_cors import CORS
@@ -12,8 +12,10 @@ from models.stock import Stock, StockTransaction
 from models.supplier import Supplier
 from models.purchase_order import PurchaseOrder, PurchaseOrderLine
 from models.user import User, UnitOfMeasure, Bin, BinStock, WorkOrder, WorkOrderLine
+from models.sap_models import SAPPlant, SAPStorageLocation, SAPMovementType, SAPConfig
 from services.inventory_service import InventoryService
 from services.reporting_service import ReportingService
+from controllers.sap_ui import register_sap_routes
 from datetime import datetime
 import os
 
@@ -35,9 +37,10 @@ def create_app(config_name='default'):
     def load_user(user_id):
         return User.query.get(int(user_id))
     
-    # Create tables
+    # Create tables and initialize data
     with app.app_context():
         db.create_all()
+        
         # Create default admin user if not exists
         if not User.query.filter_by(username='admin').first():
             admin = User(
@@ -63,8 +66,16 @@ def create_app(config_name='default'):
                     db.session.add(unit)
             
             db.session.commit()
+        
+        # Initialize SAP data if not exists
+        if SAPPlant.query.count() == 0:
+            from init_sap_data import init_sap_data
+            init_sap_data()
     
-    # Register routes
+    # Register SAP routes first (includes /)
+    register_sap_routes(app)
+    
+    # Register API routes
     register_routes(app)
     
     return app
@@ -72,26 +83,19 @@ def create_app(config_name='default'):
 def register_routes(app):
     """Register all API routes"""
     
-    # Authentication routes
-    @app.route('/')
-    def index():
-        """Redirect to login or dashboard"""
-        if current_user.is_authenticated:
-            return redirect('/dashboard')
-        return redirect('/login')
-    
+    # Authentication routes (login page and API endpoints only)
     @app.route('/login')
     def login():
         """Login page"""
         if current_user.is_authenticated:
-            return redirect('/dashboard')
+            return redirect('/')
         return render_template('login.html')
     
     @app.route('/dashboard')
     @login_required
     def dashboard():
-        """Main dashboard"""
-        return render_template('dashboard.html')
+        """Old dashboard - redirect to legacy"""
+        return redirect('/legacy')
     
     @app.route('/api/auth/login', methods=['POST'])
     def api_login():
