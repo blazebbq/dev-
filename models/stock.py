@@ -62,7 +62,7 @@ class StockTransaction(db.Model):
     
     # Relationships
     product = db.relationship('Product', back_populates='transactions')
-    warehouse = db.relationship('Warehouse', foreign_keys=[warehouse_code], back_populates='transactions')
+    warehouse = db.relationship('Warehouse', foreign_keys=[warehouse_code])
     to_warehouse = db.relationship('Warehouse', foreign_keys=[to_warehouse_code])
     
     def __repr__(self):

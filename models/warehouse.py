@@ -21,7 +21,6 @@ class Warehouse(db.Model):
     
     # Relationships
     stock_records = db.relationship('Stock', back_populates='warehouse', cascade='all, delete-orphan')
-    transactions = db.relationship('StockTransaction', back_populates='warehouse')
     
     def __repr__(self):
         return f'<Warehouse {self.code}: {self.name}>'
