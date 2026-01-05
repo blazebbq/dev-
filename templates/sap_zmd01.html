@@ -1,0 +1,56 @@
+{% extends "sap_base.html" %}
+
+{% block title %}ZMD01 - Plants & Storage Locations{% endblock %}
+
+{% block content %}
+<div class="sap-transaction-header">
+    <div>
+        <span class="sap-transaction-title">ZMD01 — Master Data Maintenance</span>
+        <span class="sap-transaction-code">Plants & Storage Locations</span>
+    </div>
+</div>
+
+<div class="sap-table-container">
+    <div class="sap-table-header">
+        <span>Plants ({{ plants|length }})</span>
+    </div>
+    
+    {% if plants %}
+    {% for plant in plants %}
+    <div style="padding:15px; border-bottom:1px solid #e0e0e0;">
+        <h4 style="color:#003366; margin-bottom:10px;">
+            Plant {{ plant.code }} - {{ plant.name }}
+            {% if plant.city %}({{ plant.city }}, {{ plant.country }}){% endif %}
+        </h4>
+        
+        <table class="sap-table" style="margin-top:10px;">
+            <thead>
+                <tr>
+                    <th style="width:100px;">SLoc Code</th>
+                    <th>Name</th>
+                    <th style="width:80px;">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sloc in plant.storage_locations %}
+                <tr>
+                    <td><strong>{{ sloc.code }}</strong></td>
+                    <td>{{ sloc.name }}</td>
+                    <td>
+                        <span class="{% if sloc.active %}sap-status-success{% else %}sap-status-error{% endif %}">
+                            {{ 'Active' if sloc.active else 'Inactive' }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="empty-state" style="padding:40px; text-align:center;">
+        <p>No plants defined. Initialize SAP data first.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

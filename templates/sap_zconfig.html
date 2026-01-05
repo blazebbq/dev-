@@ -1,0 +1,99 @@
+{% extends "sap_base.html" %}
+
+{% block title %}ZCONFIG - Configuration{% endblock %}
+
+{% block content %}
+<div class="sap-transaction-header">
+    <div>
+        <span class="sap-transaction-title">ZCONFIG — System Configuration</span>
+        <span class="sap-transaction-code">Maintain Configuration</span>
+    </div>
+</div>
+
+{% if message %}
+<div class="sap-message sap-message-{{ message_type }}">
+    {{ message }}
+</div>
+{% endif %}
+
+<div class="sap-table-container">
+    <div class="sap-table-header">
+        <span>Configuration Parameters</span>
+    </div>
+    
+    {% if configs %}
+    <table class="sap-table">
+        <thead>
+            <tr>
+                <th style="width:200px;">Key</th>
+                <th style="width:150px;">Value</th>
+                <th>Description</th>
+                <th style="width:120px;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for config in configs %}
+            <tr>
+                <td><strong>{{ config.key }}</strong></td>
+                <td>{{ config.value }}</td>
+                <td>{{ config.description or '-' }}</td>
+                <td>
+                    <button class="sap-table-btn" onclick="editConfig('{{ config.key }}', '{{ config.value }}')">
+                        Edit
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state" style="padding:40px; text-align:center;">
+        <p>No configuration found. Initialize SAP data first.</p>
+    </div>
+    {% endif %}
+</div>
+
+<div id="configModal" class="modal" style="display:none;">
+    <div class="modal-content" style="background:white; padding:30px; border-radius:10px; max-width:500px; margin:100px auto;">
+        <h3 style="margin-bottom:20px;">Edit Configuration</h3>
+        <form method="POST" action="/tcode/zconfig">
+            <input type="hidden" name="key" id="configKey">
+            <div class="sap-form-row single">
+                <label class="sap-form-label">Value</label>
+                <input type="text" name="value" id="configValue" class="sap-form-input" required>
+            </div>
+            <div class="sap-button-bar">
+                <button type="button" class="sap-btn" onclick="closeModal()">Cancel</button>
+                <button type="submit" class="sap-btn-success">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function editConfig(key, value) {
+    document.getElementById('configKey').value = key;
+    document.getElementById('configValue').value = value;
+    document.getElementById('configModal').style.display = 'flex';
+}
+
+function closeModal() {
+    document.getElementById('configModal').style.display = 'none';
+}
+</script>
+
+<style>
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+</style>
+{% endblock %}

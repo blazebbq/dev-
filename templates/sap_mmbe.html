@@ -1,0 +1,113 @@
+{% extends "sap_base.html" %}
+
+{% block title %}MMBE - Stock Overview{% endblock %}
+
+{% block content %}
+<div class="sap-transaction-header">
+    <div>
+        <span class="sap-transaction-title">MMBE — Stock Overview</span>
+        <span class="sap-transaction-code">Display Stock On Hand</span>
+    </div>
+</div>
+
+<!-- Filter Panel -->
+<div class="sap-filter-panel">
+    <form method="GET" action="/tcode/mmbe">
+        <div class="sap-filter-row">
+            <label class="sap-filter-label">Material:</label>
+            <input type="text" name="material_sku" class="sap-filter-input" 
+                   value="{{ filters.material_sku if filters else '' }}" placeholder="Material Number">
+            
+            <label class="sap-filter-label">Plant:</label>
+            <input type="text" name="plant_code" class="sap-filter-input" 
+                   value="{{ filters.plant_code if filters else '' }}" placeholder="Plant Code">
+            
+            <label class="sap-filter-label">Storage Location:</label>
+            <input type="text" name="sloc_code" class="sap-filter-input" 
+                   value="{{ filters.sloc_code if filters else '' }}" placeholder="SLoc Code">
+        </div>
+        
+        <div class="sap-filter-row">
+            <button type="submit" class="sap-btn-primary">🔍 Display Stock</button>
+            <button type="button" class="sap-btn" onclick="window.location.href='/tcode/mmbe'">↺ Clear</button>
+        </div>
+    </form>
+</div>
+
+<!-- Stock Table -->
+<div class="sap-table-container">
+    <div class="sap-table-header">
+        <span>Stock On Hand ({{ stock_data|length }} records)</span>
+    </div>
+    
+    {% if stock_data %}
+    <table class="sap-table">
+        <thead>
+            <tr>
+                <th>Material</th>
+                <th>Material Name</th>
+                <th style="width:80px;">Plant</th>
+                <th style="width:80px;">SLoc</th>
+                <th>Batch</th>
+                <th style="width:120px; text-align:right;">Quantity</th>
+                <th style="width:100px;">Last Updated</th>
+                <th style="width:120px;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for stock in stock_data %}
+            <tr>
+                <td><strong>{{ stock.material_sku }}</strong></td>
+                <td>{{ stock.material_name }}</td>
+                <td>{{ stock.plant_code }}</td>
+                <td>{{ stock.sloc_code }}</td>
+                <td>{{ stock.batch_number or '-' }}</td>
+                <td style="text-align:right;">
+                    <strong>{{ "%.3f"|format(stock.quantity) }}</strong>
+                </td>
+                <td>{{ stock.last_updated[:10] if stock.last_updated else '-' }}</td>
+                <td class="sap-table-actions">
+                    <button class="sap-table-btn" 
+                            onclick="window.location.href='/tcode/mm03?material={{ stock.material_sku }}'">
+                        Material
+                    </button>
+                    <button class="sap-table-btn"
+                            onclick="moveStock('{{ stock.material_sku }}', '{{ stock.plant_code }}', '{{ stock.sloc_code }}')">
+                        Move
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <!-- Summary -->
+    <div style="padding:15px; background:#f0f0f0; border-top:1px solid #ccc;">
+        <strong>Total Records:</strong> {{ stock_data|length }}
+        {% if filters.material_sku %}
+        | <strong>Material:</strong> {{ filters.material_sku }}
+        {% endif %}
+        {% if filters.plant_code %}
+        | <strong>Plant:</strong> {{ filters.plant_code }}
+        {% endif %}
+    </div>
+    
+    {% else %}
+    <div class="empty-state" style="padding:40px; text-align:center; color:#999;">
+        <div style="font-size:48px;">📊</div>
+        <p>No stock found matching your criteria. Try adjusting the filters or post a goods receipt in MIGO.</p>
+        <button class="sap-btn-primary" onclick="window.location.href='/tcode/migo'" style="margin-top:15px;">
+            Go to MIGO
+        </button>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function moveStock(material, plant, sloc) {
+    // Redirect to MIGO with pre-filled transfer (311)
+    const url = `/tcode/migo?movement_type=311&material_sku=${material}&plant_code=${plant}&sloc_from_code=${sloc}`;
+    window.location.href = url;
+}
+</script>
+{% endblock %}

@@ -1,0 +1,92 @@
+{% extends "sap_base.html" %}
+
+{% block title %}MM02 - Change Material{% endblock %}
+
+{% block content %}
+<div class="sap-transaction-header">
+    <div>
+        <span class="sap-transaction-title">MM02 — Change Material</span>
+        <span class="sap-transaction-code">Material Master Edit</span>
+    </div>
+</div>
+
+{% if message %}
+<div class="sap-message sap-message-{{ message_type }}">
+    {{ message }}
+</div>
+{% endif %}
+
+{% if not material and not material_sku %}
+<div class="sap-form">
+    <div class="sap-form-section">
+        <div class="sap-form-section-title">Select Material</div>
+        
+        <form method="GET" action="/tcode/mm02">
+            <div class="sap-form-row single">
+                <label class="sap-form-label required">Material Number</label>
+                <input type="text" name="material" class="sap-form-input" required placeholder="Enter Material SKU">
+            </div>
+            
+            <div class="sap-button-bar">
+                <button type="submit" class="sap-btn-primary">✓ Change</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% elif material %}
+<form method="POST" action="/tcode/mm02" class="sap-form">
+    <input type="hidden" name="sku" value="{{ material.sku }}">
+    
+    <div class="sap-form-section">
+        <div class="sap-form-section-title">Material Data</div>
+        
+        <div class="sap-form-row">
+            <label class="sap-form-label">Material Number</label>
+            <input type="text" class="sap-form-input" value="{{ material.sku }}" readonly>
+            
+            <label class="sap-form-label required">Material Name</label>
+            <input type="text" name="name" class="sap-form-input" value="{{ material.name }}" required>
+        </div>
+        
+        <div class="sap-form-row single">
+            <label class="sap-form-label">Description</label>
+            <textarea name="description" class="sap-form-textarea">{{ material.description or '' }}</textarea>
+        </div>
+        
+        <div class="sap-form-row">
+            <label class="sap-form-label">Unit Price</label>
+            <input type="number" step="0.01" name="unit_price" class="sap-form-input" value="{{ material.unit_price }}">
+            
+            <label class="sap-form-label">Reorder Point</label>
+            <input type="number" name="reorder_point" class="sap-form-input" value="{{ material.reorder_point }}">
+        </div>
+        
+        <div class="sap-form-row">
+            <label class="sap-form-label">Reorder Quantity</label>
+            <input type="number" name="reorder_quantity" class="sap-form-input" value="{{ material.reorder_quantity }}">
+            
+            <label class="sap-form-label">Status</label>
+            <input type="text" class="sap-form-input" value="{{ material.status }}" readonly>
+        </div>
+    </div>
+    
+    <div class="sap-button-bar">
+        <button type="button" class="sap-btn" onclick="window.location.href='/tcode/mm03?material={{ material.sku }}'">
+            ← Back
+        </button>
+        <button type="submit" class="sap-btn-success">
+            💾 Save
+        </button>
+    </div>
+</form>
+{% else %}
+<div class="sap-message sap-message-error">
+    Material {{ material_sku }} not found.
+</div>
+<div class="sap-button-bar">
+    <button class="sap-btn" onclick="window.location.href='/tcode/mm02'">
+        ← Back
+    </button>
+</div>
+{% endif %}
+{% endblock %}
