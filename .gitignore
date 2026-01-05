@@ -58,3 +58,4 @@ htmlcov/
 # APK files (keeping existing ones but ignore future ones)
 # app-release.apk
 # test-dpc-9-0-13.apk
+stock_management.db
