@@ -1,0 +1,45 @@
+{% extends "sap_base.html" %}
+
+{% block title %}ZMVT - Movement Types{% endblock %}
+
+{% block content %}
+<div class="sap-transaction-header">
+    <div>
+        <span class="sap-transaction-title">ZMVT — Movement Types Reference</span>
+        <span class="sap-transaction-code">Display Movement Type Configuration</span>
+    </div>
+</div>
+
+<div class="sap-table-container">
+    <div class="sap-table-header">
+        <span>Movement Types ({{ movement_types|length }})</span>
+    </div>
+    
+    {% if movement_types %}
+    <table class="sap-table">
+        <thead>
+            <tr>
+                <th style="width:60px;">Code</th>
+                <th>Name</th>
+                <th>Description</th>
+                <th style="width:80px;">Category</th>
+                <th style="width:80px;">Reversal</th>
+                <th style="width:80px;">Batch</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for mvt in movement_types %}
+            <tr>
+                <td><strong>{{ mvt.code }}</strong></td>
+                <td>{{ mvt.name }}</td>
+                <td>{{ mvt.description }}</td>
+                <td>{{ mvt.category }}</td>
+                <td>{{ mvt.reversal_code or '-' }}</td>
+                <td>{{ '✓' if mvt.allow_batch else '-' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+</div>
+{% endblock %}

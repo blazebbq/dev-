@@ -1,0 +1,115 @@
+{% extends "sap_base.html" %}
+
+{% block title %}MB51 - Material Document List{% endblock %}
+
+{% block content %}
+<div class="sap-transaction-header">
+    <div>
+        <span class="sap-transaction-title">MB51 — Material Document List</span>
+        <span class="sap-transaction-code">Display/Reverse Documents</span>
+    </div>
+</div>
+
+<!-- Filter Panel -->
+<div class="sap-filter-panel">
+    <form method="GET" action="/tcode/mb51">
+        <div class="sap-filter-row">
+            <label class="sap-filter-label">Document Number:</label>
+            <input type="text" name="doc_number" class="sap-filter-input" 
+                   value="{{ filters.doc_number if filters else '' }}" placeholder="49xxxxxxxx">
+            
+            <label class="sap-filter-label">Created By:</label>
+            <input type="text" name="created_by" class="sap-filter-input" 
+                   value="{{ filters.created_by if filters else '' }}" placeholder="Username">
+        </div>
+        
+        <div class="sap-filter-row">
+            <label class="sap-filter-label">From Date:</label>
+            <input type="date" name="from_date" class="sap-filter-input" 
+                   value="{{ filters.from_date if filters else '' }}">
+            
+            <label class="sap-filter-label">To Date:</label>
+            <input type="date" name="to_date" class="sap-filter-input" 
+                   value="{{ filters.to_date if filters else '' }}">
+        </div>
+        
+        <div class="sap-filter-row">
+            <button type="submit" class="sap-btn-primary">🔍 Search</button>
+            <button type="button" class="sap-btn" onclick="window.location.href='/tcode/mb51'">↺ Clear</button>
+        </div>
+    </form>
+</div>
+
+<!-- Document List -->
+<div class="sap-table-container">
+    <div class="sap-table-header">
+        <span>Material Documents ({{ total }} found)</span>
+        <span style="font-size:11px;">Page {{ page }} of {{ pages }}</span>
+    </div>
+    
+    {% if documents %}
+    <table class="sap-table">
+        <thead>
+            <tr>
+                <th style="width:120px;">Doc. Number</th>
+                <th style="width:100px;">Doc. Date</th>
+                <th style="width:100px;">Posting Date</th>
+                <th>Created By</th>
+                <th>Reference</th>
+                <th style="width:80px;">Items</th>
+                <th style="width:100px;">Reversal?</th>
+                <th style="width:150px;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for doc in documents %}
+            <tr>
+                <td><strong>{{ doc.doc_number }}</strong></td>
+                <td>{{ doc.doc_date }}</td>
+                <td>{{ doc.posting_date }}</td>
+                <td>{{ doc.created_by }}</td>
+                <td>{{ doc.reference_text or '-' }}</td>
+                <td style="text-align:center;">{{ doc.items|length }}</td>
+                <td>
+                    {% if doc.reversal_of_doc_number %}
+                        <span style="color:red;">Rev of {{ doc.reversal_of_doc_number }}</span>
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td class="sap-table-actions">
+                    <button class="sap-table-btn" onclick="window.location.href='/tcode/mb51/doc/{{ doc.doc_number }}'">
+                        Display
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <!-- Pagination -->
+    {% if pages > 1 %}
+    <div style="padding:10px; text-align:center;">
+        {% if page > 1 %}
+        <a href="?page={{ page - 1 }}" class="sap-btn">← Previous</a>
+        {% endif %}
+        
+        <span style="margin:0 15px;">Page {{ page }} of {{ pages }}</span>
+        
+        {% if page < pages %}
+        <a href="?page={{ page + 1 }}" class="sap-btn">Next →</a>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    {% else %}
+    <div class="empty-state" style="padding:40px; text-align:center; color:#999;">
+        <div style="font-size:48px;">📄</div>
+        <p>No material documents found. Post a movement in MIGO to see documents here.</p>
+        <button class="sap-btn-primary" onclick="window.location.href='/tcode/migo'" style="margin-top:15px;">
+            Go to MIGO
+        </button>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

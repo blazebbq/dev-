@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Stock Management System{% endblock %}</title>
+    <link rel="stylesheet" href="/static/sap.css">
+</head>
+<body>
+    <!-- SAP-style top bar -->
+    <div class="sap-topbar">
+        <div class="sap-topbar-left">
+            <span class="sap-logo">🏭</span>
+            <span class="sap-title">Stock Management System</span>
+        </div>
+        
+        <div class="sap-topbar-center">
+            <!-- Command field -->
+            <form action="/tcode" method="POST" class="sap-command-form">
+                <input type="text" name="tcode" id="commandField" class="sap-command-field" 
+                       placeholder="Command (e.g., MIGO, MB51, MMBE)" 
+                       autocomplete="off">
+            </form>
+            
+            <!-- Context selectors -->
+            <div class="sap-context">
+                <select id="plantSelector" class="sap-select">
+                    <option value="1000">Plant 1000</option>
+                </select>
+                <select id="slocSelector" class="sap-select">
+                    <option value="0001">SLoc 0001</option>
+                    <option value="0002">SLoc 0002</option>
+                    <option value="0003">SLoc 0003</option>
+                    <option value="0004">SLoc 0004</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="sap-topbar-right">
+            <span class="sap-user">{{ current_user.username if current_user.is_authenticated else 'Guest' }}</span>
+            <span class="sap-role">({{ current_user.role if current_user.is_authenticated else 'VIEWER' }})</span>
+            {% if current_user.is_authenticated %}
+            <form action="/api/auth/logout" method="POST" style="display:inline;">
+                <button type="submit" class="sap-btn-text">Logout</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Main container -->
+    <div class="sap-container">
+        <!-- Left sidebar -->
+        <div class="sap-sidebar">
+            <div class="sap-menu-section">
+                <div class="sap-menu-header">Inventory</div>
+                <a href="/tcode/migo" class="sap-menu-item {% if active_tcode == 'MIGO' %}active{% endif %}">
+                    <span class="sap-menu-code">MIGO</span>
+                    <span class="sap-menu-text">Goods Movement</span>
+                </a>
+                <a href="/tcode/mmbe" class="sap-menu-item {% if active_tcode == 'MMBE' %}active{% endif %}">
+                    <span class="sap-menu-code">MMBE</span>
+                    <span class="sap-menu-text">Stock Overview</span>
+                </a>
+                <a href="/tcode/mb51" class="sap-menu-item {% if active_tcode == 'MB51' %}active{% endif %}">
+                    <span class="sap-menu-code">MB51</span>
+                    <span class="sap-menu-text">Material Doc List</span>
+                </a>
+            </div>
+            
+            <div class="sap-menu-section">
+                <div class="sap-menu-header">Materials</div>
+                <a href="/tcode/mm03" class="sap-menu-item {% if active_tcode == 'MM03' %}active{% endif %}">
+                    <span class="sap-menu-code">MM03</span>
+                    <span class="sap-menu-text">Display Material</span>
+                </a>
+                <a href="/tcode/mm02" class="sap-menu-item {% if active_tcode == 'MM02' %}active{% endif %}">
+                    <span class="sap-menu-code">MM02</span>
+                    <span class="sap-menu-text">Change Material</span>
+                </a>
+                <a href="/tcode/zmm01" class="sap-menu-item {% if active_tcode == 'ZMM01' %}active{% endif %}">
+                    <span class="sap-menu-code">ZMM01</span>
+                    <span class="sap-menu-text">Create Material</span>
+                </a>
+            </div>
+            
+            <div class="sap-menu-section">
+                <div class="sap-menu-header">Master Data</div>
+                <a href="/tcode/zmd01" class="sap-menu-item {% if active_tcode == 'ZMD01' %}active{% endif %}">
+                    <span class="sap-menu-code">ZMD01</span>
+                    <span class="sap-menu-text">Plants & SLocs</span>
+                </a>
+                <a href="/tcode/zmvt" class="sap-menu-item {% if active_tcode == 'ZMVT' %}active{% endif %}">
+                    <span class="sap-menu-code">ZMVT</span>
+                    <span class="sap-menu-text">Movement Types</span>
+                </a>
+            </div>
+            
+            <div class="sap-menu-section">
+                <div class="sap-menu-header">Reporting</div>
+                <a href="/tcode/zrep01" class="sap-menu-item {% if active_tcode == 'ZREP01' %}active{% endif %}">
+                    <span class="sap-menu-code">ZREP01</span>
+                    <span class="sap-menu-text">Low Stock Report</span>
+                </a>
+                <a href="/tcode/zrep02" class="sap-menu-item {% if active_tcode == 'ZREP02' %}active{% endif %}">
+                    <span class="sap-menu-code">ZREP02</span>
+                    <span class="sap-menu-text">Movement Summary</span>
+                </a>
+            </div>
+            
+            <div class="sap-menu-section">
+                <div class="sap-menu-header">System</div>
+                <a href="/tcode/zconfig" class="sap-menu-item {% if active_tcode == 'ZCONFIG' %}active{% endif %}">
+                    <span class="sap-menu-code">ZCONFIG</span>
+                    <span class="sap-menu-text">Configuration</span>
+                </a>
+                <a href="/legacy" class="sap-menu-item">
+                    <span class="sap-menu-code">ZLEGACY</span>
+                    <span class="sap-menu-text">Legacy UI</span>
+                </a>
+            </div>
+        </div>
+        
+        <!-- Main content area -->
+        <div class="sap-content">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+    
+    <!-- SAP-style status bar -->
+    <div class="sap-statusbar">
+        <div class="sap-statusbar-left">
+            <span id="statusMessage" class="sap-status-message">
+                {% if status_message %}
+                    <span class="sap-status-{{ status_type or 'info' }}">{{ status_message }}</span>
+                {% else %}
+                    Ready
+                {% endif %}
+            </span>
+        </div>
+        <div class="sap-statusbar-right">
+            <span id="serverTime"></span>
+            <span>|</span>
+            <span>{{ current_user.username if current_user.is_authenticated else 'Guest' }}</span>
+            <span>|</span>
+            <span id="contextDisplay">Plant: <span id="currentPlant">1000</span> / SLoc: <span id="currentSloc">0001</span></span>
+        </div>
+    </div>
+    
+    <script src="/static/sap.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

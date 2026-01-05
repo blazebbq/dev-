@@ -1,0 +1,71 @@
+{% extends "sap_base.html" %}
+
+{% block title %}ZMM01 - Create Material{% endblock %}
+
+{% block content %}
+<div class="sap-transaction-header">
+    <div>
+        <span class="sap-transaction-title">ZMM01 — Create Material</span>
+        <span class="sap-transaction-code">Material Master Create</span>
+    </div>
+</div>
+
+{% if message %}
+<div class="sap-message sap-message-{{ message_type }}">
+    {{ message }}
+</div>
+{% endif %}
+
+<form method="POST" action="/tcode/zmm01" class="sap-form">
+    <div class="sap-form-section">
+        <div class="sap-form-section-title">Basic Data</div>
+        
+        <div class="sap-form-row">
+            <label class="sap-form-label required">Material Number</label>
+            <input type="text" name="sku" class="sap-form-input" required 
+                   value="{{ form_data.sku if form_data else '' }}"
+                   placeholder="Material SKU">
+            
+            <label class="sap-form-label required">Material Name</label>
+            <input type="text" name="name" class="sap-form-input" required 
+                   value="{{ form_data.name if form_data else '' }}">
+        </div>
+        
+        <div class="sap-form-row single">
+            <label class="sap-form-label">Description</label>
+            <textarea name="description" class="sap-form-textarea">{{ form_data.description if form_data else '' }}</textarea>
+        </div>
+        
+        <div class="sap-form-row">
+            <label class="sap-form-label">Base Unit</label>
+            <select name="unit_of_measure" class="sap-form-select">
+                <option value="EA">EA - Each</option>
+                <option value="KG">KG - Kilogram</option>
+                <option value="G">G - Gram</option>
+                <option value="L">L - Liter</option>
+                <option value="M">M - Meter</option>
+            </select>
+            
+            <label class="sap-form-label">Unit Price</label>
+            <input type="number" step="0.01" name="unit_price" class="sap-form-input" value="0.00">
+        </div>
+        
+        <div class="sap-form-row">
+            <label class="sap-form-label">Reorder Point</label>
+            <input type="number" name="reorder_point" class="sap-form-input" value="0">
+            
+            <label class="sap-form-label">Reorder Quantity</label>
+            <input type="number" name="reorder_quantity" class="sap-form-input" value="0">
+        </div>
+    </div>
+    
+    <div class="sap-button-bar">
+        <button type="button" class="sap-btn" onclick="window.location.href='/tcode/mm03'">
+            ← Cancel
+        </button>
+        <button type="submit" class="sap-btn-success">
+            💾 Create
+        </button>
+    </div>
+</form>
+{% endblock %}

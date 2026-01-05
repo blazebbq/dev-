@@ -1,0 +1,170 @@
+{% extends "sap_base.html" %}
+
+{% block title %}MB51 - Display Document {{ doc_number }}{% endblock %}
+
+{% block content %}
+<div class="sap-transaction-header">
+    <div>
+        <span class="sap-transaction-title">MB51 — Display Material Document</span>
+        <span class="sap-transaction-code">Document {{ doc_number }}</span>
+    </div>
+</div>
+
+{% if request.args.get('message') %}
+<div class="sap-message sap-message-{{ request.args.get('message_type', 'info') }}">
+    {{ request.args.get('message') }}
+</div>
+{% endif %}
+
+{% if document %}
+<div class="sap-doc-display">
+    <!-- Document Header -->
+    <div class="sap-doc-header">
+        <h3 style="margin-bottom:15px; color:#003366;">Document Header</h3>
+        
+        <div class="sap-doc-field">
+            <div class="sap-doc-field-label">Document Number</div>
+            <div class="sap-doc-field-value"><strong>{{ document.doc_number }}</strong></div>
+        </div>
+        
+        <div class="sap-doc-field">
+            <div class="sap-doc-field-label">Document Date</div>
+            <div class="sap-doc-field-value">{{ document.doc_date }}</div>
+        </div>
+        
+        <div class="sap-doc-field">
+            <div class="sap-doc-field-label">Posting Date</div>
+            <div class="sap-doc-field-value">{{ document.posting_date }}</div>
+        </div>
+        
+        <div class="sap-doc-field">
+            <div class="sap-doc-field-label">Created By</div>
+            <div class="sap-doc-field-value">{{ document.created_by }}</div>
+        </div>
+        
+        <div class="sap-doc-field">
+            <div class="sap-doc-field-label">Created At</div>
+            <div class="sap-doc-field-value">{{ document.created_at[:19] if document.created_at else '-' }}</div>
+        </div>
+        
+        {% if document.reversal_of_doc_number %}
+        <div class="sap-doc-field">
+            <div class="sap-doc-field-label">Reversal Of</div>
+            <div class="sap-doc-field-value">
+                <a href="/tcode/mb51/doc/{{ document.reversal_of_doc_number }}" style="color:blue; text-decoration:underline;">
+                    {{ document.reversal_of_doc_number }}
+                </a>
+            </div>
+        </div>
+        {% endif %}
+        
+        <div style="clear:both; margin-top:10px;">
+            <div class="sap-doc-field" style="display:block; margin-bottom:8px;">
+                <div class="sap-doc-field-label">Reference Text</div>
+                <div class="sap-doc-field-value">{{ document.reference_text or '-' }}</div>
+            </div>
+            
+            <div class="sap-doc-field" style="display:block;">
+                <div class="sap-doc-field-label">Header Text</div>
+                <div class="sap-doc-field-value">{{ document.header_text or '-' }}</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Document Items -->
+    <div style="margin-top:20px;">
+        <h3 style="margin-bottom:10px; color:#003366;">Document Items</h3>
+        
+        <table class="sap-table">
+            <thead>
+                <tr>
+                    <th style="width:40px;">Line</th>
+                    <th style="width:60px;">Mvt</th>
+                    <th>Material</th>
+                    <th>Material Name</th>
+                    <th style="width:80px;">Plant</th>
+                    <th style="width:80px;">SLoc From</th>
+                    <th style="width:80px;">SLoc To</th>
+                    <th style="width:80px;">Batch</th>
+                    <th style="width:100px; text-align:right;">Quantity</th>
+                    <th style="width:40px;">UoM</th>
+                    <th>Item Text</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in document.items %}
+                <tr>
+                    <td>{{ item.line_no }}</td>
+                    <td><strong>{{ item.movement_type }}</strong></td>
+                    <td><strong>{{ item.material_sku }}</strong></td>
+                    <td>{{ item.material_name }}</td>
+                    <td>{{ item.plant_code }}</td>
+                    <td>{{ item.sloc_from_code or '-' }}</td>
+                    <td>{{ item.sloc_to_code or '-' }}</td>
+                    <td>{{ item.batch_number or '-' }}</td>
+                    <td style="text-align:right;">{{ item.quantity }}</td>
+                    <td>{{ item.uom }}</td>
+                    <td>{{ item.item_text or '-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Action Buttons -->
+    <div class="sap-button-bar" style="margin-top:20px;">
+        <button class="sap-btn" onclick="window.location.href='/tcode/mb51'">
+            ← Back to List
+        </button>
+        
+        {% if not document.reversal_of_doc_id %}
+        <form method="POST" action="/tcode/mb51/reverse/{{ document.doc_number }}" style="display:inline;" 
+              onsubmit="return confirm('Are you sure you want to reverse this document?');">
+            <button type="submit" class="sap-btn" style="background:#ff9800; color:white;">
+                ↩ Reverse Document
+            </button>
+        </form>
+        {% else %}
+        <button class="sap-btn" disabled>
+            ↩ Already Reversed
+        </button>
+        {% endif %}
+        
+        <button class="sap-btn" onclick="window.print()">
+            🖨️ Print
+        </button>
+        
+        <button class="sap-btn-primary" onclick="window.location.href='/tcode/migo'">
+            ➕ New Movement
+        </button>
+    </div>
+</div>
+
+{% else %}
+<div class="sap-message sap-message-error">
+    Document {{ doc_number }} not found.
+</div>
+<div class="sap-button-bar">
+    <button class="sap-btn" onclick="window.location.href='/tcode/mb51'">
+        ← Back to List
+    </button>
+</div>
+{% endif %}
+
+<style>
+/* Print styles */
+@media print {
+    .sap-topbar, .sap-sidebar, .sap-statusbar, .sap-button-bar {
+        display: none;
+    }
+    
+    .sap-container {
+        display: block;
+    }
+    
+    .sap-content {
+        padding: 0;
+    }
+}
+</style>
+{% endblock %}

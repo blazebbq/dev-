@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Stock Management System</title>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>🏭 Stock MS</h2>
+                <p id="userInfo">Welcome, User</p>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-page="dashboard">
+                    <span>📊</span> Dashboard
+                </a>
+                <a href="#" class="nav-item" data-page="products">
+                    <span>📦</span> Products
+                </a>
+                <a href="#" class="nav-item" data-page="warehouses">
+                    <span>🏢</span> Warehouses & Bins
+                </a>
+                <a href="#" class="nav-item" data-page="stock">
+                    <span>📋</span> Stock Management
+                </a>
+                <a href="#" class="nav-item" data-page="workorders">
+                    <span>📝</span> Work Orders
+                </a>
+                <a href="#" class="nav-item" data-page="suppliers">
+                    <span>🤝</span> Suppliers
+                </a>
+                <a href="#" class="nav-item" data-page="purchase-orders">
+                    <span>💼</span> Purchase Orders
+                </a>
+                <a href="#" class="nav-item" data-page="reports">
+                    <span>📈</span> Reports
+                </a>
+                <a href="#" class="nav-item" data-page="units">
+                    <span>⚖️</span> Units of Measure
+                </a>
+                <a href="#" class="nav-item" data-page="users" id="usersLink" style="display:none;">
+                    <span>👥</span> Users
+                </a>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <button onclick="logout()" class="btn-logout">🚪 Logout</button>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-bar">
+                <h1 id="pageTitle">Dashboard</h1>
+                <div class="top-bar-actions">
+                    <button class="btn-icon" title="Notifications">🔔</button>
+                    <button class="btn-icon" title="Settings">⚙️</button>
+                </div>
+            </header>
+            
+            <div class="content-area" id="contentArea">
+                <!-- Content will be loaded dynamically -->
+                <div class="loading">Loading...</div>
+            </div>
+        </main>
+    </div>
+    
+    <script src="/static/js/dashboard.js"></script>
+</body>
+</html>

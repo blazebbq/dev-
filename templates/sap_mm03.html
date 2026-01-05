@@ -1,0 +1,95 @@
+{% extends "sap_base.html" %}
+
+{% block title %}MM03 - Display Material{% endblock %}
+
+{% block content %}
+<div class="sap-transaction-header">
+    <div>
+        <span class="sap-transaction-title">MM03 — Display Material</span>
+        <span class="sap-transaction-code">Material Master Display</span>
+    </div>
+</div>
+
+{% if not material and not material_sku %}
+<div class="sap-form">
+    <div class="sap-form-section">
+        <div class="sap-form-section-title">Select Material</div>
+        
+        <form method="GET" action="/tcode/mm03">
+            <div class="sap-form-row single">
+                <label class="sap-form-label required">Material Number</label>
+                <input type="text" name="material" class="sap-form-input" required placeholder="Enter Material SKU">
+            </div>
+            
+            <div class="sap-button-bar">
+                <button type="submit" class="sap-btn-primary">✓ Display</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% elif material %}
+<div class="sap-doc-display">
+    <div class="sap-doc-header">
+        <h3 style="margin-bottom:15px; color:#003366;">Material {{ material.sku }}</h3>
+        
+        <div class="sap-doc-field">
+            <div class="sap-doc-field-label">Material Number</div>
+            <div class="sap-doc-field-value"><strong>{{ material.sku }}</strong></div>
+        </div>
+        
+        <div class="sap-doc-field">
+            <div class="sap-doc-field-label">Material Name</div>
+            <div class="sap-doc-field-value">{{ material.name }}</div>
+        </div>
+        
+        <div class="sap-doc-field">
+            <div class="sap-doc-field-label">Status</div>
+            <div class="sap-doc-field-value">{{ material.status }}</div>
+        </div>
+        
+        <div class="sap-doc-field">
+            <div class="sap-doc-field-label">Base Unit</div>
+            <div class="sap-doc-field-value">{{ material.unit_of_measure }}</div>
+        </div>
+        
+        <div class="sap-doc-field">
+            <div class="sap-doc-field-label">Unit Price</div>
+            <div class="sap-doc-field-value">{{ "%.2f"|format(material.unit_price) }}</div>
+        </div>
+        
+        <div class="sap-doc-field">
+            <div class="sap-doc-field-label">Reorder Point</div>
+            <div class="sap-doc-field-value">{{ material.reorder_point }}</div>
+        </div>
+        
+        <div style="clear:both; margin-top:15px;">
+            <div class="sap-doc-field" style="display:block;">
+                <div class="sap-doc-field-label">Description</div>
+                <div class="sap-doc-field-value">{{ material.description or '-' }}</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="sap-button-bar" style="margin-top:20px;">
+        <button class="sap-btn" onclick="window.location.href='/tcode/mm03'">
+            ← Back
+        </button>
+        <button class="sap-btn-primary" onclick="window.location.href='/tcode/mm02?material={{ material.sku }}'">
+            ✏️ Change
+        </button>
+        <button class="sap-btn" onclick="window.location.href='/tcode/mmbe?material_sku={{ material.sku }}'">
+            📊 Stock Overview
+        </button>
+    </div>
+</div>
+{% else %}
+<div class="sap-message sap-message-error">
+    Material {{ material_sku }} not found.
+</div>
+<div class="sap-button-bar">
+    <button class="sap-btn" onclick="window.location.href='/tcode/mm03'">
+        ← Back
+    </button>
+</div>
+{% endif %}
+{% endblock %}
