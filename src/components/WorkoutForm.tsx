@@ -102,6 +102,7 @@ export function WorkoutForm({ machineId, brandingColor }: WorkoutFormProps) {
               onChange={(e) => setWeight(e.target.value)}
               placeholder="e.g. 80"
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+              style={{ "--tw-ring-color": brandingColor } as React.CSSProperties}
             />
           </div>
           <div>
@@ -116,6 +117,7 @@ export function WorkoutForm({ machineId, brandingColor }: WorkoutFormProps) {
               onChange={(e) => setReps(e.target.value)}
               placeholder="e.g. 10"
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+              style={{ "--tw-ring-color": brandingColor } as React.CSSProperties}
             />
           </div>
         </div>
@@ -131,6 +133,7 @@ export function WorkoutForm({ machineId, brandingColor }: WorkoutFormProps) {
             rows={2}
             maxLength={500}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent resize-none"
+            style={{ "--tw-ring-color": brandingColor } as React.CSSProperties}
           />
         </div>
 

@@ -126,7 +126,8 @@ export function MachineList({ machines: initialMachines, gymSlug, brandingColor 
                   value={formData.name}
                   onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
                   placeholder="e.g. Bench Press"
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
+                  style={{ "--tw-ring-color": brandingColor } as React.CSSProperties}
                 />
               </div>
               <div>
@@ -139,7 +140,8 @@ export function MachineList({ machines: initialMachines, gymSlug, brandingColor 
                   value={formData.machineNumber}
                   onChange={(e) => setFormData((prev) => ({ ...prev, machineNumber: e.target.value }))}
                   placeholder="e.g. A1"
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
+                  style={{ "--tw-ring-color": brandingColor } as React.CSSProperties}
                 />
               </div>
             </div>
