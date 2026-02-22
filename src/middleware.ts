@@ -23,9 +23,9 @@ export default withAuth(
       authorized({ req, token }) {
         const { pathname } = req.nextUrl;
 
-        // Machine pages require auth
+        // Machine pages: allow through when guest mode is enabled for debugging
         if (pathname.startsWith("/g/")) {
-          return !!token;
+          return !!token || process.env.GUEST_MODE === "true";
         }
 
         // Dashboard requires auth

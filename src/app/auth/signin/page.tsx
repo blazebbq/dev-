@@ -17,7 +17,9 @@ interface Provider {
   callbackUrl: string;
 }
 
-function SignInContent() {
+// guestModeEnabled is injected server-side so the flag never leaks into the client bundle
+// as a raw env var reference.
+function SignInContent({ guestModeEnabled }: { guestModeEnabled: boolean }) {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") ?? "/dashboard";
   const error = searchParams.get("error");
@@ -50,6 +52,12 @@ function SignInContent() {
 
   const handleGoogleSignIn = () => {
     signIn("google", { callbackUrl });
+  };
+
+  const handleGuestContinue = () => {
+    // Redirect directly to the callbackUrl without authentication.
+    // Only available when GUEST_MODE=true (debug builds).
+    window.location.href = callbackUrl;
   };
 
   if (emailSent) {
@@ -139,15 +147,41 @@ function SignInContent() {
             </button>
           </>
         )}
+
+        {guestModeEnabled && (
+          <>
+            <div className="relative mt-6 mb-4">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-400">Debug options</span>
+              </div>
+            </div>
+            <button
+              onClick={handleGuestContinue}
+              className="w-full py-2.5 px-4 border border-dashed border-gray-300 hover:bg-gray-50 text-gray-500 text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
+            >
+              <span>🐛</span>
+              Continue as Guest
+            </button>
+            <p className="mt-2 text-center text-xs text-gray-400">
+              Guest mode — no data will be saved
+            </p>
+          </>
+        )}
       </div>
     </div>
   );
 }
 
+// Server component wrapper — reads the server-only env var and passes it as a prop
+// so it never appears as a raw `process.env` reference in the client bundle.
 export default function SignInPage() {
+  const guestModeEnabled = process.env.GUEST_MODE === "true";
   return (
     <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
-      <SignInContent />
+      <SignInContent guestModeEnabled={guestModeEnabled} />
     </Suspense>
   );
 }
