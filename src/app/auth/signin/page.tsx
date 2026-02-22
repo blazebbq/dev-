@@ -17,15 +17,16 @@ interface Provider {
   callbackUrl: string;
 }
 
-// guestModeEnabled is injected server-side so the flag never leaks into the client bundle
-// as a raw env var reference.
-function SignInContent({ guestModeEnabled }: { guestModeEnabled: boolean }) {
+// devBypassEmail is injected server-side so the value never leaks into the
+// client bundle as a raw process.env reference.
+function SignInContent({ devBypassEmail }: { devBypassEmail: string | null }) {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") ?? "/dashboard";
   const error = searchParams.get("error");
 
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingLabel, setLoadingLabel] = useState("Sending...");
   const [emailSent, setEmailSent] = useState(false);
   const [providers, setProviders] = useState<Record<string, Provider> | null>(null);
 
@@ -37,6 +38,27 @@ function SignInContent({ guestModeEnabled }: { guestModeEnabled: boolean }) {
     e.preventDefault();
     setLoading(true);
     try {
+      // Dev bypass: if the email matches DEV_BYPASS_EMAIL, skip the real magic-link
+      // flow and sign in instantly via the server-side bypass route.
+      if (
+        devBypassEmail &&
+        email.trim().toLowerCase() === devBypassEmail.trim().toLowerCase()
+      ) {
+        setLoadingLabel("Signing in...");
+        const res = await fetch("/api/auth/dev-bypass", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, callbackUrl }),
+        });
+        if (res.ok) {
+          const data = (await res.json()) as { url?: string };
+          window.location.href = data.url ?? callbackUrl;
+          return;
+        }
+      }
+
+      // Normal magic-link flow
+      setLoadingLabel("Sending...");
       const result = await signIn("email", {
         email,
         callbackUrl,
@@ -55,8 +77,6 @@ function SignInContent({ guestModeEnabled }: { guestModeEnabled: boolean }) {
   };
 
   const handleGuestContinue = () => {
-    // Redirect directly to the callbackUrl without authentication.
-    // Only available when GUEST_MODE=true (debug builds).
     window.location.href = callbackUrl;
   };
 
@@ -109,16 +129,27 @@ function SignInContent({ guestModeEnabled }: { guestModeEnabled: boolean }) {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
+              placeholder={devBypassEmail ?? "you@example.com"}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             />
+            {devBypassEmail && (
+              <p className="mt-1.5 text-xs text-amber-600">
+                🐛 Use <button
+                  type="button"
+                  className="font-mono underline"
+                  onClick={() => setEmail(devBypassEmail)}
+                >
+                  {devBypassEmail}
+                </button> to sign in instantly (no email needed)
+              </p>
+            )}
           </div>
           <button
             type="submit"
             disabled={loading}
             className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-medium rounded-lg transition-colors"
           >
-            {loading ? "Sending..." : "Send Magic Link"}
+            {loading ? loadingLabel : "Send Magic Link"}
           </button>
         </form>
 
@@ -148,40 +179,38 @@ function SignInContent({ guestModeEnabled }: { guestModeEnabled: boolean }) {
           </>
         )}
 
-        {guestModeEnabled && (
-          <>
-            <div className="relative mt-6 mb-4">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-400">Debug options</span>
-              </div>
-            </div>
-            <button
-              onClick={handleGuestContinue}
-              className="w-full py-2.5 px-4 border border-dashed border-gray-300 hover:bg-gray-50 text-gray-500 text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
-            >
-              <span>🐛</span>
-              Continue as Guest
-            </button>
-            <p className="mt-2 text-center text-xs text-gray-400">
-              Guest mode — no data will be saved
-            </p>
-          </>
-        )}
+        {/* Guest browsing is always available */}
+        <div className="relative mt-6 mb-4">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-200" />
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-2 bg-white text-gray-400">or</span>
+          </div>
+        </div>
+        <button
+          onClick={handleGuestContinue}
+          className="w-full py-2.5 px-4 border border-dashed border-gray-300 hover:bg-gray-50 text-gray-500 text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
+        >
+          <span>👁️</span>
+          Continue as Guest
+        </button>
+        <p className="mt-2 text-center text-xs text-gray-400">
+          Browse without logging in — workout logging is disabled
+        </p>
       </div>
     </div>
   );
 }
 
-// Server component wrapper — reads the server-only env var and passes it as a prop
-// so it never appears as a raw `process.env` reference in the client bundle.
+// Server component wrapper — reads server-only env vars and passes them as props
+// so they never appear as raw process.env references in the client bundle.
 export default function SignInPage() {
-  const guestModeEnabled = process.env.GUEST_MODE === "true";
+  const devBypassEmail = process.env.DEV_BYPASS_EMAIL ?? null;
   return (
     <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
-      <SignInContent guestModeEnabled={guestModeEnabled} />
+      <SignInContent devBypassEmail={devBypassEmail} />
     </Suspense>
   );
 }
+

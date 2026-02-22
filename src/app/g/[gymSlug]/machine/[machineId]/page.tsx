@@ -18,10 +18,7 @@ export default async function MachinePage({ params }: PageProps) {
   const session = await getServerSession(authOptions);
   const isGuest = !session?.user;
 
-  if (isGuest && process.env.GUEST_MODE !== "true") {
-    const callbackUrl = `/g/${gymSlug}/machine/${machineId}`;
-    redirect(`/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`);
-  }
+  // Always allow unauthenticated browsing of machine pages (guest mode is always on)
 
   // Fetch gym by slug
   const gym = await prisma.gym.findUnique({
