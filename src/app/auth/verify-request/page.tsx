@@ -5,7 +5,8 @@ export default function VerifyRequestPage() {
         <div className="text-5xl mb-4">📧</div>
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Check your email</h2>
         <p className="text-gray-600">
-          A sign-in link has been sent to your email address.
+          A magic link has been sent to your email address. Click it to verify
+          your email and sign in.
         </p>
         <p className="text-gray-500 text-sm mt-4">
           If you don&apos;t see it, check your spam folder.

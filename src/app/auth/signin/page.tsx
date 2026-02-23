@@ -17,16 +17,16 @@ interface Provider {
   callbackUrl: string;
 }
 
-// devBypassEmail is injected server-side so the value never leaks into the
-// client bundle as a raw process.env reference.
-function SignInContent({ devBypassEmail }: { devBypassEmail: string | null }) {
+type Tab = "signin" | "register";
+
+function SignInContent() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") ?? "/dashboard";
   const error = searchParams.get("error");
 
+  const [tab, setTab] = useState<Tab>("signin");
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
-  const [loadingLabel, setLoadingLabel] = useState("Sending...");
   const [emailSent, setEmailSent] = useState(false);
   const [providers, setProviders] = useState<Record<string, Provider> | null>(null);
 
@@ -34,31 +34,12 @@ function SignInContent({ devBypassEmail }: { devBypassEmail: string | null }) {
     getProviders().then(setProviders);
   }, []);
 
-  const handleEmailSignIn = async (e: React.FormEvent) => {
+  // Both sign-in and register use the same EmailProvider magic-link flow.
+  // NextAuth automatically creates the account if the email is new.
+  const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      // Dev bypass: if the email matches DEV_BYPASS_EMAIL, skip the real magic-link
-      // flow and sign in instantly via the server-side bypass route.
-      if (
-        devBypassEmail &&
-        email.trim().toLowerCase() === devBypassEmail.trim().toLowerCase()
-      ) {
-        setLoadingLabel("Signing in...");
-        const res = await fetch("/api/auth/dev-bypass", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, callbackUrl }),
-        });
-        if (res.ok) {
-          const data = (await res.json()) as { url?: string };
-          window.location.href = data.url ?? callbackUrl;
-          return;
-        }
-      }
-
-      // Normal magic-link flow
-      setLoadingLabel("Sending...");
       const result = await signIn("email", {
         email,
         callbackUrl,
@@ -76,14 +57,6 @@ function SignInContent({ devBypassEmail }: { devBypassEmail: string | null }) {
     signIn("google", { callbackUrl });
   };
 
-  const handleGuestContinue = () => {
-    // Only follow callbackUrl if it's a guest-accessible machine page (/g/…).
-    // Any other destination (e.g. /dashboard) is auth-protected and will trigger
-    // a NextAuth "Configuration" error for unauthenticated users.
-    const guestUrl = callbackUrl.startsWith("/g/") ? callbackUrl : "/";
-    window.location.href = guestUrl;
-  };
-
   if (emailSent) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
@@ -91,20 +64,57 @@ function SignInContent({ devBypassEmail }: { devBypassEmail: string | null }) {
           <div className="text-5xl mb-4">📧</div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Check your email</h2>
           <p className="text-gray-600">
-            A sign-in link has been sent to <strong>{email}</strong>
+            {tab === "register"
+              ? "A verification link has been sent to "
+              : "A sign-in link has been sent to "}
+            <strong>{email}</strong>
+          </p>
+          <p className="text-gray-500 text-sm mt-3">
+            Click the link in the email to{" "}
+            {tab === "register" ? "verify your address and sign in" : "sign in"}.
+          </p>
+          <p className="text-gray-400 text-xs mt-4">
+            Don&apos;t see it? Check your spam folder.
           </p>
         </div>
       </div>
     );
   }
 
+  const isRegister = tab === "register";
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-lg p-8">
-        <div className="text-center mb-8">
+        <div className="text-center mb-6">
           <div className="text-4xl mb-3">🏋️</div>
           <h1 className="text-3xl font-bold text-gray-900">GymTrackQR</h1>
-          <p className="text-gray-500 mt-2">Sign in to track your workouts</p>
+        </div>
+
+        {/* Tab switcher */}
+        <div className="flex rounded-lg border border-gray-200 p-1 mb-6 bg-gray-50">
+          <button
+            type="button"
+            onClick={() => setTab("signin")}
+            className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${
+              !isRegister
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            Sign In
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab("register")}
+            className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${
+              isRegister
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            Register
+          </button>
         </div>
 
         {error && (
@@ -122,7 +132,7 @@ function SignInContent({ devBypassEmail }: { devBypassEmail: string | null }) {
           </div>
         )}
 
-        <form onSubmit={handleEmailSignIn} className="space-y-4 mb-6">
+        <form onSubmit={handleEmailSubmit} className="space-y-4 mb-6">
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
               Email address
@@ -133,27 +143,18 @@ function SignInContent({ devBypassEmail }: { devBypassEmail: string | null }) {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder={devBypassEmail ?? "you@example.com"}
+              placeholder="you@example.com"
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             />
-            {devBypassEmail && (
-              <p className="mt-1.5 text-xs text-amber-600">
-                🐛 Use <button
-                  type="button"
-                  className="font-mono underline"
-                  onClick={() => setEmail(devBypassEmail)}
-                >
-                  {devBypassEmail}
-                </button> to sign in instantly (no email needed)
-              </p>
-            )}
           </div>
           <button
             type="submit"
             disabled={loading}
             className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-medium rounded-lg transition-colors"
           >
-            {loading ? loadingLabel : "Send Magic Link"}
+            {loading
+              ? isRegister ? "Sending verification..." : "Sending link..."
+              : isRegister ? "Register" : "Send Magic Link"}
           </button>
         </form>
 
@@ -182,38 +183,15 @@ function SignInContent({ devBypassEmail }: { devBypassEmail: string | null }) {
             </button>
           </>
         )}
-
-        {/* Guest browsing is always available */}
-        <div className="relative mt-6 mb-4">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-200" />
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-gray-400">or</span>
-          </div>
-        </div>
-        <button
-          onClick={handleGuestContinue}
-          className="w-full py-2.5 px-4 border border-dashed border-gray-300 hover:bg-gray-50 text-gray-500 text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
-        >
-          <span>👁️</span>
-          Continue as Guest
-        </button>
-        <p className="mt-2 text-center text-xs text-gray-400">
-          Browse without logging in — workout logging is disabled
-        </p>
       </div>
     </div>
   );
 }
 
-// Server component wrapper — reads server-only env vars and passes them as props
-// so they never appear as raw process.env references in the client bundle.
 export default function SignInPage() {
-  const devBypassEmail = process.env.DEV_BYPASS_EMAIL ?? null;
   return (
     <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
-      <SignInContent devBypassEmail={devBypassEmail} />
+      <SignInContent />
     </Suspense>
   );
 }

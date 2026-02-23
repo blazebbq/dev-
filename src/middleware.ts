@@ -23,9 +23,9 @@ export default withAuth(
       authorized({ req, token }) {
         const { pathname } = req.nextUrl;
 
-        // Machine pages: allow through (guest browsing is always available)
+        // Machine pages require auth
         if (pathname.startsWith("/g/")) {
-          return true;
+          return !!token;
         }
 
         // Dashboard requires auth
