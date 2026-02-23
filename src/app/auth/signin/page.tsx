@@ -77,7 +77,11 @@ function SignInContent({ devBypassEmail }: { devBypassEmail: string | null }) {
   };
 
   const handleGuestContinue = () => {
-    window.location.href = callbackUrl;
+    // Only follow callbackUrl if it's a guest-accessible machine page (/g/…).
+    // Any other destination (e.g. /dashboard) is auth-protected and will trigger
+    // a NextAuth "Configuration" error for unauthenticated users.
+    const guestUrl = callbackUrl.startsWith("/g/") ? callbackUrl : "/";
+    window.location.href = guestUrl;
   };
 
   if (emailSent) {
