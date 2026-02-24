@@ -25,20 +25,38 @@ export const authOptions: NextAuthOptions = {
       from: process.env.EMAIL_FROM ?? "noreply@gymtrackqr.com",
     }),
   ],
+  // JWT strategy is required so that next-auth/middleware (withAuth) can read
+  // the session from the cookie. The "database" strategy stores an opaque token
+  // that the middleware cannot decode, causing a redirect loop after sign-in.
   session: {
-    strategy: "database",
+    strategy: "jwt",
   },
   callbacks: {
-    async session({ session, user }) {
-      if (session.user) {
-        // Fetch fresh user data including role and gymId
+    // Populate the JWT on first sign-in (user is defined) and on subsequent
+    // visits (user is undefined — return the existing token unchanged).
+    async jwt({ token, user }) {
+      if (user) {
+        // First sign-in: user is always defined and has an id.
+        // Eagerly store the id so subsequent requests don't hit the DB.
+        token.id = user.id;
+        // Fetch role and gymId — if not found yet use safe defaults.
         const dbUser = await prisma.user.findUnique({
           where: { id: user.id },
-          select: { id: true, role: true, gymId: true },
+          select: { role: true, gymId: true },
         });
-        session.user.id = user.id;
-        session.user.role = (dbUser?.role ?? Role.USER) as Role;
-        session.user.gymId = dbUser?.gymId ?? null;
+        token.role = (dbUser?.role ?? Role.USER) as Role;
+        token.gymId = dbUser?.gymId ?? null;
+      }
+      return token;
+    },
+    // Expose token fields on the session object that is returned to the client.
+    async session({ session, token }) {
+      if (session.user) {
+        // token.id is set on every sign-in above; fall back to empty string to
+        // satisfy the non-optional Session.user.id type if the token is stale.
+        session.user.id = token.id ?? "";
+        session.user.role = (token.role ?? Role.USER) as Role;
+        session.user.gymId = token.gymId ?? null;
       }
       return session;
     },
