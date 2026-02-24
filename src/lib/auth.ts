@@ -21,6 +21,12 @@ export const authOptions: NextAuthOptions = {
           user: process.env.EMAIL_SERVER_USER,
           pass: process.env.EMAIL_SERVER_PASSWORD,
         },
+        // Disable TLS certificate validation in development only (e.g. Ethereal
+        // uses a self-signed cert). Never set rejectUnauthorized:false in production.
+        tls:
+          process.env.NODE_ENV === "development"
+            ? { rejectUnauthorized: false }
+            : undefined,
       },
       from: process.env.EMAIL_FROM ?? "noreply@gymtrackqr.com",
     }),
