@@ -31,11 +31,10 @@ export const authOptions: NextAuthOptions = {
       from: process.env.EMAIL_FROM ?? "noreply@gymtrackqr.com",
     }),
   ],
-  // JWT strategy is required so that next-auth/middleware (withAuth) can read
-  // the session from the cookie. The "database" strategy stores an opaque token
-  // that the middleware cannot decode, causing a redirect loop after sign-in.
   session: {
     strategy: "jwt",
+    // 30-day long-lived session — users won't need to re-authenticate every visit.
+    maxAge: 30 * 24 * 60 * 60,
   },
   callbacks: {
     // Populate the JWT on first sign-in (user is defined) and leave it untouched

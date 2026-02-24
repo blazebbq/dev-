@@ -6,6 +6,7 @@ import { MachineList } from "@/components/MachineList";
 import { DashboardStats } from "@/components/DashboardStats";
 import { AdBanner } from "@/components/AdBanner";
 import { SignOutButton } from "@/components/SignOutButton";
+import { GymSettings } from "@/components/GymSettings";
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
@@ -109,6 +110,13 @@ export default async function DashboardPage() {
           }))}
           gymSlug={gym.slug}
           brandingColor={gym.brandingColor}
+        />
+
+        {/* Gym branding settings */}
+        <GymSettings
+          gymId={gym.id}
+          currentLogoUrl={gym.logoUrl ?? null}
+          currentBrandingColor={gym.brandingColor}
         />
       </main>
     </div>

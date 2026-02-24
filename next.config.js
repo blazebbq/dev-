@@ -11,6 +11,10 @@ const nextConfig = {
     remotePatterns: [
       { protocol: "https", hostname: "lh3.googleusercontent.com" },
       { protocol: "http", hostname: "localhost" },
+      // Gym logos are customer-provided and may be hosted on any CDN.
+      // The API enforces that only valid HTTPS URLs are stored, preventing
+      // non-HTTPS or malformed URLs from reaching the image optimiser.
+      { protocol: "https", hostname: "**" },
     ],
   },
 };
