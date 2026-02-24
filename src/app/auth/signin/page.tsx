@@ -21,7 +21,7 @@ type Tab = "signin" | "register";
 
 function SignInContent() {
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") ?? "/dashboard";
+  const callbackUrl = searchParams.get("callbackUrl") ?? "/";
   const error = searchParams.get("error");
 
   const [tab, setTab] = useState<Tab>("signin");
