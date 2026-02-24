@@ -6,13 +6,15 @@ export default withAuth(
     const { pathname } = req.nextUrl;
     const token = req.nextauth.token;
 
-    // Protect dashboard - require GYM_ADMIN or SUPER_ADMIN
+    // Protect dashboard - require GYM_ADMIN or SUPER_ADMIN.
+    // Redirect authenticated users with insufficient role to the home page (not
+    // the sign-in page) so they don't end up in an auth redirect loop.
     if (pathname.startsWith("/dashboard")) {
       if (
         token?.role !== "GYM_ADMIN" &&
         token?.role !== "SUPER_ADMIN"
       ) {
-        return NextResponse.redirect(new URL("/auth/signin", req.url));
+        return NextResponse.redirect(new URL("/", req.url));
       }
     }
 

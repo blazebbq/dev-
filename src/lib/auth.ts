@@ -32,29 +32,32 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt",
   },
   callbacks: {
-    // Populate the JWT on first sign-in (user is defined) and on subsequent
-    // visits (user is undefined — return the existing token unchanged).
+    // Populate the JWT on first sign-in (user is defined) and leave it untouched
+    // on subsequent requests (user is undefined).
     async jwt({ token, user }) {
       if (user) {
-        // First sign-in: user is always defined and has an id.
-        // Eagerly store the id so subsequent requests don't hit the DB.
-        token.id = user.id;
-        // Fetch role and gymId — if not found yet use safe defaults.
-        const dbUser = await prisma.user.findUnique({
-          where: { id: user.id },
-          select: { role: true, gymId: true },
-        });
-        token.role = (dbUser?.role ?? Role.USER) as Role;
-        token.gymId = dbUser?.gymId ?? null;
+        // With PrismaAdapter + EmailProvider, user.id is the DB record id, but
+        // NextAuth also sets token.sub to the same value. Using the nullish
+        // coalesce ensures we always have a non-undefined userId even in edge
+        // cases where user.id arrives as undefined.
+        const userId = user.id ?? token.sub;
+        if (userId) {
+          token.id = userId;
+          const dbUser = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { role: true, gymId: true },
+          });
+          token.role = (dbUser?.role ?? Role.USER) as Role;
+          token.gymId = dbUser?.gymId ?? null;
+        }
       }
       return token;
     },
-    // Expose token fields on the session object that is returned to the client.
+    // Expose token fields on the session object returned to the client.
+    // No reference to `user` here — that only exists in the database strategy.
     async session({ session, token }) {
       if (session.user) {
-        // token.id is set on every sign-in above; fall back to empty string to
-        // satisfy the non-optional Session.user.id type if the token is stale.
-        session.user.id = token.id ?? "";
+        session.user.id = token.id ?? token.sub ?? "";
         session.user.role = (token.role ?? Role.USER) as Role;
         session.user.gymId = token.gymId ?? null;
       }
